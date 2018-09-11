@@ -1,0 +1,81 @@
+#include <WiFiClient.h>
+#include <ESP8266WiFi.h>
+
+//LED 
+#define NUM_LEDS 891
+#define LED_PIN 4
+#define TEST_LED D0
+#define STRIP_TYPE WS2812B
+#define COLOR_MODE RGB
+
+//Wifi
+const char* ssid = "WhiteRose";
+const char* password = "shaeed1199";
+//ESP8266WebServer server ( 80 );
+
+// Start a TCP Server on port 5045
+WiFiServer server(5045);
+WiFiClient client;
+
+
+void setup() {
+  //Init Hardware
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(TEST_LED, OUTPUT);
+  
+  Serial.begin(115200);
+  //Serial.begin(1843200);
+  delay(100);
+
+  //Wifi connect
+  //WiFiManager wifiManager;
+  //wifiManager.autoConnect("InfinityRoom");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  
+  // Print the IP address
+  Serial.print("Use this URL to connect: ");
+  Serial.print("http://");
+  Serial.print(WiFi.localIP());
+  Serial.println("/");
+  
+  // Start the server
+  server.begin();
+  Serial.println("Server started"); 
+  //client = server.available(); 
+}
+
+void loop() {
+  TCPServer();
+}
+
+void TCPServer () {
+    if (!client.connected()) {  
+      Serial.print('.');
+      client = server.available(); 
+      delay(1000);
+      return; 
+    }
+    // Send back something to the clinet
+      //server.write("shaeed");
+      //client.print("shaeed\r\n");
+
+    if (client.available() > 0) {
+      // Read incoming message
+      //char inChar = client.read();
+      String req = client.readStringUntil('\r');
+      Serial.println(req);
+      client.flush();
+      // Send back something to the clinet
+      client.print(">");
+      // Echo input on Serial monitor
+      //Serial.write(inChar);
+    }
+//delay(1000);
+}
+    

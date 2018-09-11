@@ -1,0 +1,64 @@
+<!DOCTYPE html><html>
+<head><meta charset='ISO-8859-1'>
+<title>Eclairage - Infinity Room Control</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.css">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+<style>
+html * {font-size: 25px; color: #FFFFFF; font-family: Arial;	text-align: center;}
+button, input, select,option {color: #000000;} table {border-spacing: 5px 1rem; height: 80%;}
+</style>
+<script type='text/javascript'>
+	$( function() {
+		populateThms();
+		populateColors($('#color_selected').val());
+		
+    	$( '.thm-rd' ).checkboxradio({
+      		icon: false
+    	});
+    	$('#'+$('#thm_selected').val()).prop('checked', true).button('refresh');
+  	} );
+	
+	function selectRadio() {
+		var t = document.getElementById('thm_selected').value;
+		document.getElementById(t).checked = true; populateColors(document.getElementById('color_selected').value);}
+	
+	function populateColors(selectedColor){
+		var clrs = ['AliceBlue', 'Amethyst', 'AntiqueWhite', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque', 'Black', 'BlanchedAlmond', 'Blue', 'BlueViolet', 'Brown', 'BurlyWood', 'CadetBlue', 'Chartreuse', 'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan', 'DarkBlue', 'DarkCyan', 'DarkGoldenrod', 'DarkGray', 'DarkGreen', 'DarkKhaki', 'DarkMagenta', 'DarkOliveGreen', 'DarkOrange', 'DarkOrchid', 'DarkRed', 'DarkSalmon', 'DarkSeaGreen', 'DarkSlateBlue', 'DarkSlateGray', 'DarkTurquoise', 'DarkViolet', 'DeepPink', 'DeepSkyBlue', 'DimGray', 'DodgerBlue', 'FireBrick', 'FloralWhite', 'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'Goldenrod', 'Gray', 'Green', 'GreenYellow', 'Honeydew', 'HotPink', 'IndianRed', 'Indigo', 'Ivory', 'Khaki', 'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue', 'LightCoral', 'LightCyan', 'LightGoldenrodYellow', 'LightGreen', 'LightGrey', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue', 'LightSlateGray', 'LightSteelBlue', 'LightYellow', 'Lime', 'LimeGreen', 'Linen', 'Magenta', 'Maroon', 'MediumAquamarine', 'MediumBlue', 'MediumOrchid', 'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen', 'MediumTurquoise', 'MediumVioletRed', 'MidnightBlue', 'MintCream', 'MistyRose', 'Moccasin', 'NavajoWhite', 'Navy', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed', 'Orchid', 'PaleGoldenrod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed', 'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plaid', 'Plum', 'PowderBlue', 'Purple', 'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Salmon', 'SandyBrown', 'SeaGreen', 'Seashell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue', 'SlateGray', 'Snow', 'SpringGreen', 'SteelBlue', 'Tan', 'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'Wheat', 'White', 'WhiteSmoke', 'Yellow', 'YellowGreen'];
+		var vals = ['15792383', '10053324', '16444375', '65535', '8388564', '15794175', '16119260', '16770244', '0', '16772045', '255', '9055202', '10824234', '14596231', '6266528', '8388352', '13789470', '16744272', '6591981', '16775388', '14423100', '65535', '139', '35723', '12092939', '11119017', '25600', '12433259', '9109643', '5597999', '16747520', '10040012', '9109504', '15308410', '9419919', '4734347', '3100495', '52945', '9699539', '16716947', '49151', '6908265', '2003199', '11674146', '16775920', '2263842', '16711935', '14474460', '16316671', '16766720', '14329120', '8421504', '32768', '11403055', '15794160', '16738740', '13458524', '4915330', '16777200', '15787660', '15132410', '16773365', '8190976', '16775885', '11393254', '15761536', '14745599', '16448210', '9498256', '13882323', '16758465', '16752762', '2142890', '8900346', '7833753', '11584734', '16777184', '65280', '3329330', '16445670', '16711935', '8388608', '6737322', '205', '12211667', '9662683', '3978097', '8087790', '64154', '4772300', '13047173', '1644912', '16121850', '16770273', '16770229', '16768685', '128', '16643558', '8421376', '7048739', '16753920', '16729344', '14315734', '15657130', '10025880', '11529966', '14381203', '16773077', '16767673', '13468991', '16761035', '13391155', '14524637', '11591910', '8388736', '16711680', '12357519', '267920', '9127187', '16416882', '16032864', '3050327', '16774638', '10506797', '12632256', '8900331', '6970061', '7372944', '16775930', '65407', '4620980', '13808780', '32896', '14204888', '16737095', '4251856', '15631086', '16113331', '16777215', '16119285', '16776960', '10145074'];
+		var drp = document.getElementById('color');
+		for(var i=0;i<clrs.length;i++){
+			var opt = document.createElement('option');
+			opt.innerHTML = clrs[i];
+		    opt.value = vals[i];
+		    if(vals[i]==selectedColor) opt.selected = 'selected';
+		    drp.appendChild(opt);
+		}
+	}
+	function populateThms(){
+		var thms = ['Off', 'Rainbow', 'Strobe', 'All White', 'Colorful ', 'Fade In/Out', 'Spiral', 'Blink', 'Night Sky'];
+		for(var i=0;i<thms.length;i++){
+			var content = '<label for="' + i + '">' + thms[i] + '</label>';
+			content += "<input type='radio' name='thm' class='thm-rd' value='"+ i +"' id='" + i + "'>";
+			$('#thm-div').append(content);
+		}
+	}
+	
+	</script>
+
+</head>
+<body bgcolor='#481036'><h1>DimensionLess Studio Infinity Room</h1><hr>
+<form action='/apply'>
+<div id='thm-div'></div>
+<table>
+<tr><td>Color:</td><td><select name='color' id='color'><option></option></select></td></tr>
+<tr><td>Brightness:</td><td><input type='number' name='brt' min='1' max='10'></td></tr>
+<tr><td>Speed/Hue:</td><td><input type='number' name='spd' min='1' max="10000"></td></tr>
+<tr><td colspan='2'><input type='submit' value='Apply'></td></tr>
+</table></form>
+
+
+
+<input type='text' value='3' id='thm_selected' hidden>
+<input type='text' value='15792383' id='color_selected' hidden>
+</body></html>
