@@ -143,11 +143,15 @@ class ProcessRequest:
         
         #Get the details from DB
         dev = Device.objects.get(devId=devId)
-        
+        state = 1
         #If Device On/Off request is received
         if(brt == None and spd == None and clr == None):
             #Change the device state
             dev.state = dev.state != True
+            if(dev.state) :
+                state = 1
+            else:
+                state = 0
             #If switching ON, read the saved values from db
             if(dev.option['brt'] == 1):
                 brt = dev.brt
@@ -207,7 +211,9 @@ class ProcessRequest:
                 'brt':brt,
                 'spd':spd,
                 'clr':clr,
-                'apply':True}
+                'apply':True,
+                'led':devId,
+                'state':state}
         
         #Infinity Room Leds theme number
         if(dev.devType == const.DEV_IR):

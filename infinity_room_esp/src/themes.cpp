@@ -1,412 +1,4 @@
-//#include <WiFiManager.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
-#include <FastLED.h>
-#include <EEPROM.h>
-
-//LED 
-#define NUM_LEDS 890
-#define PIN 4
-#define LED_PIN 4
-#define STRIP_TYPE WS2812B
-#define COLOR_MODE GRB
-CRGB leds[NUM_LEDS];
-uint8_t hue[NUM_LEDS];
-
-//Wifi
-#define debug true
-const char* ssid = "dimensionless art studio";
-const char* password = "Dimen@123";
-
-// Start a TCP Server on port 5045
-//WiFiServer server(5045);
-ESP8266WebServer server ( 5045 );
-#define DEV_NAME  "InfinityRoom"
-//WiFiClient client;
-
-//Setup constants
-#define THEME_OFF         1 
-#define THEME_ON          2 
-#define THEME_RAINBOW     3 
-#define THEME_STROBE      4 
-#define THEME_ALLWHITE    5 
-#define THEME_COLORFUL    6 
-#define THEME_FADE        7 
-#define THEME_NIGHTSKY    10
-#define Theme_RGBLoop                 11
-#define Theme_FadeInFadeOut           12
-#define Theme_Strobe2                 13
-#define Theme_CylonBounce             14
-#define Theme_NewKITT                 15
-#define THEME_NIGHTSKY2               16
-#define Theme_Sparkle                 17
-#define Theme_SnowSparkle             18
-#define Theme_RunningLights           19
-#define Theme_colorWipe               20
-#define Theme_theaterChaseRainbow     21
-#define Theme_Fire                    22
-#define Theme_meteorRain              23
-#define Theme_HueEffect               24
-
-#define THEME_CUSTOM      100
-
-#define DELAY_APPLY_COLOR_ALL 100
-#define DELAY_MICRO 20
-
-//Globals
-boolean dataAvailable = false;
-String data;
-
-byte theme;
-byte themeBrt;
-byte themeBrtFade;
-uint16_t themeSpd;
-unsigned long themeClr;
-boolean isRepeat;
-boolean isApplyColor, isApplyBrt;
-int hueInt;
-unsigned long counter;
-boolean showBlack;
-
-byte tThm, tBrt, tApply = 0;
-boolean tApplyClr, tApplyBrt, fillLed;
-uint16_t tSpd, tLed;
-unsigned long tClr;
-byte r, g, b;
-
-void processData(){
-  tApply = 11;
-  if(tApplyBrt){
-    FastLED.setBrightness(themeBrt);
-  }
-    dataAvailable = false;
-}
-
-void handleApply() {
-  dataAvailable = true;
-  
-  if (server.arg("apply")!= "" && server.arg("apply") == "True"){
-    tApply = 1;
-  }
-  if (server.arg("brt")!= ""){
-    tBrt = server.arg("brt").toInt();
-    tApplyBrt = true;
-  }
-  if (server.arg("clr")!= ""){
-    tClr = server.arg("clr").toInt();
-    tApplyClr = true;
-  }
-  if (server.arg("led")!= ""){
-    tLed = server.arg("clr").toInt();
-    fillLed = true;
-  }
-  if (server.arg("spd")!= ""){
-    tSpd = server.arg("spd").toInt();
-  }
-  if (server.arg("thm")!= ""){
-    tThm = server.arg("thm").toInt();
-  }
-
-  Serial.println(String(tThm) + " " + String(tBrt));
-  //tring s = server.readStringUntil('\r');
-  //Serial.println(s);
-  displayPage("Hndle Apply");
-}
-
-void applyLed(){
-  tApply = 0;
-  themeBrt = tBrt;
-  themeSpd = tSpd;
-  themeClr = tClr;
-  theme = tThm;
-  isRepeat = true;
-  isApplyColor = tApplyClr;
-  isApplyBrt = tApplyBrt;
-  
-  counter = 0;
-  hueInt = 0;
-  themeBrtFade = themeBrt;
-
-  //Convert to RGB
-  b = tClr & 255;
-  g = (tClr >> 8) & 255;
-  r = (tClr >> 16) & 255;
-  setAll(0, 0, 0);
-}
-
-void executeLED(){
-  if(isApplyBrt){
-    isApplyBrt = false;
-    FastLED.setBrightness(themeBrt);
-  }
-  switch(theme){
-    case THEME_OFF:
-        fill_solid(leds, NUM_LEDS, CRGB::Black);
-        isRepeat = false;
-        delay(DELAY_APPLY_COLOR_ALL);
-        FastLED.show();
-        break;
-        
-    case THEME_RAINBOW:
-         fill_rainbow(leds, NUM_LEDS, hueInt, 5);
-         FastLED.show();
-         hueInt = hueInt + themeSpd;
-        break;
-        
-    case THEME_STROBE:
-        if(counter >= 1000 * themeSpd){
-          counter = 0;
-          if(showBlack){
-            fill_solid(leds, NUM_LEDS, CRGB::Black);
-            delay(DELAY_APPLY_COLOR_ALL);
-            FastLED.show();
-            //delay(600);
-            showBlack = false;
-          } else {
-            /*for(int i=0; i< NUM_LEDS; i++) {
-              leds[i] = CRGB(255, 0, 0);
-            }*/
-            fill_solid(leds, NUM_LEDS, themeClr);
-            delay(DELAY_APPLY_COLOR_ALL);
-            FastLED.show();
-            showBlack = true;
-          }
-        }
-        counter++;
-        break;
-        
-    case THEME_ALLWHITE:
-        fill_solid(leds, NUM_LEDS, CRGB::White);
-        delay(DELAY_APPLY_COLOR_ALL);
-        FastLED.show();
-        isRepeat = false;
-        break;
-        
-    case THEME_COLORFUL:
-        fill_solid(leds, NUM_LEDS, themeClr);
-        delay(DELAY_APPLY_COLOR_ALL);
-        FastLED.show();
-        isRepeat = false;
-        break;
-        
-    case THEME_FADE:
-        if(isApplyColor){
-          fill_solid(leds, NUM_LEDS, themeClr);
-          delay(DELAY_APPLY_COLOR_ALL);
-          isApplyColor = false;
-        }
-        if(counter >= 1000 * themeSpd){
-          counter = 0;
-          if(showBlack){
-            //Fade in
-            FastLED.setBrightness(themeBrtFade);
-            themeBrtFade++;
-            delay(2);
-            FastLED.show();
-            if(themeBrtFade > themeBrtFade)
-              showBlack = false;
-          } else {
-            //Fade out
-            FastLED.setBrightness(themeBrtFade);
-            themeBrtFade--;
-            delay(2);
-            FastLED.show();
-            if(themeBrtFade < 1)
-              showBlack = true;
-          }
-        }
-        counter++;
-        break;
-
-       case Theme_RGBLoop:
-      RGBLoop(themeSpd);
-   break;
-   
-   case Theme_FadeInFadeOut:
-      FadeInOut(r, g, b);
-   break;
-   
-   case Theme_Strobe2:
-      Strobe(r, g, b, 10, themeSpd, 1000);
-   break;
-   
-   case Theme_CylonBounce:
-      CylonBounce(r, g, b, 4, themeSpd, 2);
-   break;
-   
-   case Theme_NewKITT:
-      NewKITT(r, g, b, 20, themeSpd, 2);
-   break;
-   
-   case THEME_NIGHTSKY:
-      Twinkle(0xff, 0xff, 0xff, 100, themeSpd, false);
-      Twinkle(0, 0, 0, NUM_LEDS, 1, false);
-   break;
-   
-   case THEME_NIGHTSKY2:
-      TwinkleRandom(200, themeSpd, false);
-   break;
-   
-   case Theme_Sparkle:
-      Sparkle(r, g, b, themeSpd);
-   break;
-   
-   case Theme_SnowSparkle:
-      SnowSparkle(r, g, b, themeSpd, random(100, 1000));
-   break;
-   
-   case Theme_RunningLights:
-      RunningLights(r, g, b, themeSpd);
-   break;
-   
-   case Theme_colorWipe:
-      colorWipe(r, g, b, themeSpd);
-   break;
-   
-   case Theme_theaterChaseRainbow:
-      theaterChaseRainbow(themeSpd);
-   break;
-   
-   case Theme_Fire:
-      Fire(35, 180, themeSpd);
-   break;
-   
-   case Theme_meteorRain:
-      meteorRain(r, g, b, 10, 8, true, themeSpd);
-   break;
-   
-   case Theme_HueEffect:
-     
-     HueEffect();
-   break;
-        
-    case THEME_CUSTOM:
-        FastLED.show();
-        break;
-  }
-}
-
-void fillLedData(){
-  fillLed = false;
-  leds[tLed] = tClr;
-  
-}
-
-void setup() {
-  //Init Hardware
-  pinMode(LED_PIN, OUTPUT);
-  FastLED.addLeds<STRIP_TYPE, LED_PIN, COLOR_MODE>(leds, NUM_LEDS);
-  if(debug){
-    Serial.begin(115200);
-    //Serial.begin(1843200);
-    delay(100);
-  }
-  
-  //Wifi connect
-  //WiFiManager wifiManager;
-  //wifiManager.autoConnect("InfinityRoom");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    if(debug)
-    Serial.print(".");
-  }
-  if(debug){
-    Serial.println("");
-  Serial.println("WiFi connected");
-  
-  // Print the IP address
-  Serial.print("Use this URL to connect: ");
-  Serial.print("http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("/");
-  }
-  
-  //Reset automatically
-  int isReset;
-  EEPROM.begin(1);
-  int eeAddress = 1;
-  isReset = EEPROM.read(eeAddress);
-  delay(10);
-  if(isReset == 1){
-    EEPROM.write(eeAddress, 0);
-    Serial.println("Restarting");
-    delay(5);
-    EEPROM.commit();
-    ESP.restart();
-  } else {
-    EEPROM.write(eeAddress, 1);
-    delay(10);
-    Serial.println("Not Restarting");
-    delay(5);
-  }
-  EEPROM.commit();
-
-  //Page handrels
-  server.on ( "/", handleRoot );
-  server.on ("/ir", handleApply); //Infinity room
-  server.on ("/irl", handleLeds);
-  
-  // Start the server
-  server.begin();
-  Serial.println("Server started"); 
-  //client = server.available(); 
-
-  for (int i = 0; i < NUM_LEDS; i++)
-    hue[i] = 255 / NUM_LEDS * i;
-  FastLED.show();
-
-}
-
-void loop() {
-  //TCPServer();
-  server.handleClient();
-  
-  if(dataAvailable)
-    processData();
-    
-  if(tApply > 10)
-    applyLed();
-
-  if(fillLed)
-    fillLedData();
-    
-  if(isRepeat)
-    executeLED();
-}
-
-void handleRoot() {
-  displayPage(DEV_NAME);
-}
-
-void handleLeds(){
-
-  displayPage("Handle LEDs");
-}
-
-void displayPage(String page){
-  //Send the page to client
-  server.send ( 200, "text/html", page );
-}
-
-//If returns True, then break the current task
-boolean setDelay(uint16_t d){
-  unsigned long mili = d * 1000;
-  for(unsigned long i = 0; i < mili; i += DELAY_MICRO){
-    server.handleClient();
-    if(dataAvailable){
-      //Some data received from user
-      //Break the timing
-      //processData();
-      if(dataAvailable)
-        return true;
-    } else {
-      delayMicroseconds(DELAY_MICRO);
-    }
-  }
-  return false;
-}
-
+#include "main.h"
 
 void setPixel(int Pixel, byte red, byte green, byte blue) {
   leds[Pixel].r = red;
@@ -421,8 +13,19 @@ void setAll(byte red, byte green, byte blue) {
   FastLED.show();
 }
 
-void HueEffect()
-{
+void applyBlack(){
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  delay(DELAY_APPLY_COLOR_ALL);
+  FastLED.show();
+}
+
+void applyColor(unsigned long clr){
+  fill_solid(leds, NUM_LEDS, clr);
+  delay(DELAY_APPLY_COLOR_ALL);
+  FastLED.show();
+}
+
+void HueEffect() {
   for (int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = CHSV(hue[i]++, 255, 255);
@@ -434,34 +37,32 @@ void HueEffect()
     return;
 }
 
-void RGBLoop(int SpeedDelay) {
-  for (int j = 0; j < 3; j++ ) {
+void RGBLoop(uint16_t SpeedDelay) {
+  for (byte j = 0; j < 3; j++ ) {
     // Fade IN
-    for (int k = 0; k < 256; k++) {
+    for (byte k = 0; k < 255; k++) {
       switch (j) {
         case 0: setAll(k, 0, 0); break;
         case 1: setAll(0, k, 0); break;
         case 2: setAll(0, 0, k); break;
       }
       FastLED.show();
-      if(setDelay(SpeedDelay/10))
-       return;
+      if(setDelay(SpeedDelay/10)) return;
     }
     // Fade OUT
-    for (int k = 255; k >= 0; k--) {
+    for (byte k = 255; k >= 0; k--) {
       switch (j) {
         case 0: setAll(k, 0, 0); break;
         case 1: setAll(0, k, 0); break;
         case 2: setAll(0, 0, k); break;
       }
       FastLED.show();
-      if(setDelay(SpeedDelay/10))
-       return;
+      if(setDelay(SpeedDelay/10)) return;
     }
   }
 }
 
-void FadeInOut(byte red, byte green, byte blue) {
+void FadeInOut(byte red, byte green, byte blue, uint16_t SpeedDelay) {
   float r, g, b;
 
   for (int k = 0; k < 256; k = k + 1) {
@@ -470,6 +71,7 @@ void FadeInOut(byte red, byte green, byte blue) {
     b = (k / 256.0) * blue;
     setAll(r, g, b);
     FastLED.show();
+    if(setDelay(SpeedDelay/10)) return;
   }
 
   for (int k = 255; k >= 0; k = k - 2) {
@@ -478,7 +80,36 @@ void FadeInOut(byte red, byte green, byte blue) {
     b = (k / 256.0) * blue;
     setAll(r, g, b);
     FastLED.show();
+    if(setDelay(SpeedDelay/10)) return;
   }
+}
+
+void fade_sha(){
+    if(isApplyColor){
+      applyColor(themeClr);
+      isApplyColor = false;
+    }
+    if(counter >= 1000 * themeSpd){
+      counter = 0;
+      if(showBlack){
+        //Fade in
+        FastLED.setBrightness(themeBrtFade);
+        themeBrtFade++;
+        if(setDelay(2)) return;
+        FastLED.show();
+        if(themeBrtFade > 250)
+          showBlack = false;
+      } else {
+        //Fade out
+        FastLED.setBrightness(themeBrtFade);
+        themeBrtFade--;
+        if(setDelay(2)) return;
+        FastLED.show();
+        if(themeBrtFade < 1)
+          showBlack = true;
+      }
+    }
+    counter++;
 }
 
 void Strobe(byte red, byte green, byte blue, int StrobeCount, int FlashDelay, int EndPause) {
@@ -534,8 +165,8 @@ void HalloweenEyes(byte red, byte green, byte blue,
   if(setDelay(EndPause)) return;
 }
 
-void CylonBounce(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay) {
-
+/*void CylonBounce(byte red, byte green, byte blue, int EyeSize,
+    int SpeedDelay, int ReturnDelay) {
   for (int i = 0; i < NUM_LEDS - EyeSize - 2; i++) {
     setAll(0, 0, 0);
     setPixel(i, red / 10, green / 10, blue / 10);
@@ -561,6 +192,59 @@ void CylonBounce(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, i
   }
 
   if(setDelay(ReturnDelay)) return;
+}*/
+
+void CylonBounce2(uint16_t clr, int EyeSize, int SpeedDelay) {
+  static uint16_t randStrt[L_ROWS];
+  static bool randStartDir[L_ROWS]; //True- Forward direction
+  static bool randStrtInit = true;
+  //Init start with random numbers
+  if(randStrtInit) {
+    for(byte i = 0; i < L_ROWS; i++) {
+      randStrt[i] = random(0, L_COLS - EyeSize);
+      randStartDir[i] = true;
+    }
+    randStrtInit = false;
+  }
+
+  //Erase old matrix
+  clearLedsProc();
+
+  for(byte i = 0; i < L_ROWS; i++) {
+    //forward
+    if(randStartDir[i]) {
+      for(; randStrt[i] < L_COLS-EyeSize-2; randStrt[i]++) {
+        populateMatrixCylon(randStrt[i], i, clr, EyeSize);
+      }
+      if(randStrt[i] >= L_COLS-EyeSize-2) {
+        randStartDir[i] = false;
+        randStrt[i] = L_COLS-EyeSize-2;
+      }
+    } else {
+      //Backward
+      for(; randStrt[i] > 0; randStrt[i]--) {
+        populateMatrixCylon(randStrt[i], i, clr, EyeSize);
+      }
+      if(randStrt[i] <= 0){
+        randStrt[i] = 0;
+        randStartDir[i] = true;
+      }
+    }
+  }
+
+  //Show the effect and wait
+  showLedsProc();
+  if(setDelay(SpeedDelay)) return;
+}
+
+void populateMatrixCylon(int start, byte row, uint16_t color, int EyeSize){
+    //Start pixel
+    ledsProc[row][start] = color / 10;
+    for(byte i = 1; i <= EyeSize; i++){
+        ledsProc[row][start + i] = color;
+    }
+    //Last pixel
+    ledsProc[row][start + EyeSize + 1] = color / 10;
 }
 
 void NewKITT(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay) {
@@ -677,11 +361,15 @@ void TwinkleRandom(int Count, int SpeedDelay, boolean OnlyOne) {
 }
 
 void Sparkle(byte red, byte green, byte blue, int SpeedDelay) {
-  int Pixel = random(NUM_LEDS);
-  setPixel(Pixel, red, green, blue);
+  int Pixel;
+  for(byte i = 0; i < 5; i++) {
+    Pixel = random(NUM_LEDS);
+    setPixel(Pixel, red, green, blue);
+  }
   FastLED.show();
   if(setDelay(SpeedDelay)) return;
-  setPixel(Pixel, 0, 0, 0);
+  //setPixel(Pixel, 0, 0, 0);
+  applyBlack();
 }
 
 void SnowSparkle(byte red, byte green, byte blue, int SparkleDelay, int SpeedDelay) {
@@ -881,4 +569,28 @@ void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTra
 void fadeToBlack(int ledNo, byte fadeValue) {
    // FastLED
    leds[ledNo].fadeToBlackBy( fadeValue ); 
+}
+
+void clearLedsProc(){
+  for(int i = 0; i < L_ROWS; i++) {
+    for(int j = 0; j < L_COLS; j++){
+      ledsProc[i][j] = -1;
+    }
+  }
+}
+
+void showLedsProc(){
+  //Clear all leds
+  applyBlack();
+
+  for(int i = 0; i < L_ROWS; i++){
+    for(int j = 0; j < L_COLS; j++){
+      int ledNo = i * j + j;
+      if(ledNo == N_L_1)
+        continue;
+
+      leds[ledNo] = ledsProc[i][j];
+    }
+  }
+  FastLED.show();
 }

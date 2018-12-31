@@ -350,8 +350,8 @@ def createThemes():
     
     #Infinity Room L1
     dev = Device(
-            name = 'Earth',
-            devId = 2,
+            name = 'Andromeda',
+            devId = 5,
             sno = 2,
             devType = const.DEV_LED,
             devGrp = [const.GRP_IR],
@@ -369,8 +369,8 @@ def createThemes():
     
     #Infinity Room L2
     dev = Device(
-            name = 'Mars',
-            devId = 3,
+            name = 'Whirlpool',
+            devId = 2,
             sno = 3,
             devType = const.DEV_LED,
             devGrp = [const.GRP_IR],
@@ -388,8 +388,8 @@ def createThemes():
     
     #Infinity Room L3
     dev = Device(
-            name = 'Jupiter',
-            devId = 4,
+            name = 'Cartwheel',
+            devId = 16,
             sno = 4,
             devType = const.DEV_LED,
             devGrp = [const.GRP_IR],
@@ -405,24 +405,6 @@ def createThemes():
             other = {})
     dev.save()
     
-    #Infinity Room L4
-    dev = Device(
-            name = 'Uranus',
-            devId = 5,
-            sno = 5,
-            devType = const.DEV_LED,
-            devGrp = [const.GRP_IR],
-            target = const.TAR_IRL,
-            brt = 0,
-            spd = 0,
-            spdMax = 100,
-            spdMin = 0,
-            clr = 0,
-            option = {'brt':0, 'spd':0, 'clr':0},
-            enable = True,
-            state = True,
-            other = {})
-    dev.save()
     
     a = Settings.objects.all()
     for t in a:
